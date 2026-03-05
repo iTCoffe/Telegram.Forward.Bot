@@ -13,7 +13,7 @@ NFD2.0拥有无限配额（自建有每日1k消息上限），且托管在[cloud
 # NFD
 No Fraud / Node Forward Bot
 
-一个基于cloudflare worker的telegram 消息转发bot
+基于cloudflare worker的telegram 消息转发bot，整点/半点提醒
 
 ## 特点
 - 基于cloudflare worker搭建，能够实现以下效果
@@ -21,7 +21,6 @@ No Fraud / Node Forward Bot
     - 不需要额外的域名，利用worker自带域名即可
     - 基于worker kv实现永久数据储存
     - 稳定，全球cdn转发
-- 接入反欺诈系统，当聊天对象有诈骗历史时，自动发出提醒
 - 支持屏蔽用户，避免被骚扰
 
 ## 搭建方法
@@ -35,7 +34,20 @@ No Fraud / Node Forward Bot
     - 增加一个`ENV_ADMIN_UID`变量，数值为从步骤3中获得的用户id
 6. 绑定kv数据库，创建一个Namespace Name为`nfd`的kv数据库，在setting -> variable中设置`KV Namespace Bindings`：nfd -> nfd
 7. 点击`Quick Edit`，复制[这个文件](./worker.js)到编辑器中
-8. 通过打开`https://xxx.workers.dev/registerWebhook`来注册websoket
+8. 通过打开`https://xxx.workers.dev`来注册websoket
+
+## EasyCron 配置步骤（关键）
+1. 注册 EasyCron（免费定时工具）
+2. 打开 EasyCron 官网：https://www.easycron.com → 注册免费账号（邮箱验证即可）；
+3.登录后点击「New Cron Job」创建第一个定时任务。
+4. 配置 EasyCron 定时任务：
+   URL：https://你的Worker域名/sendTime?secret=ENV_BOT_SECRET
+   Cron Expression	整点：0 * * * * / 半点：30 * * * *
+   Time Zone	选择 Asia/Shanghai（北京时间）
+   HTTP Method	保持默认 GET（不用改）
+   其他	可选超时时间设为 30 秒，可选「失败时邮件提醒」
+6. 验证配置是否生效
+   URL：https://你的Worker域名/sendTime?secret=ENV_BOT_SECRET
 
 ## 使用方法
 - 当其他用户给bot发消息，会被转发到bot创建者
