@@ -108,7 +108,7 @@ function formatTimeMessage(date) {
 <b>⏰ 时间提醒</b> 
 ├─ 时间：<code>${hours}:${minutes}</code>
 └─ 日期：<code>${year}年${month}月${day}日</code> ${weekDay}
-<i>自动推送的整点/半点提醒 🔔</i>
+<i>自动推送的整点提醒 🔔</i>
   `.trim();
 }
 
@@ -466,6 +466,8 @@ addEventListener('fetch', event => {
     event.respondWith(unRegisterWebhook(event));
   } else if (url.pathname === '/sendTime') {
     event.respondWith(handleSendTime(event)); // 免费版：URL参数验证
+  } else if (url.pathname === '/setcommands') {
+    event.respondWith(handleSetCommands(event)); // 新增：设置机器人命令菜单
   } else {
     event.respondWith(new Response('✅ Telegram Bot 运行中（时间提醒, 防诈骗数据）', { status: 200 }));
   }
@@ -538,6 +540,70 @@ async function handleSendTime(event) {
       msg: '❌ 推送失败',
       error: error.message,
       time: new Date().toLocaleString('zh-CN')
+    }, null, 2), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' }
+    });
+  }
+}
+
+// ==================== 新增：设置机器人命令菜单 ====================
+/**
+ * 处理设置机器人命令菜单的请求
+ * @param {FetchEvent} event Fetch事件
+ * @returns {Promise<Response>} 响应
+ */
+async function handleSetCommands(event) {
+  try {
+    const urlObj = new URL(event.request.url);
+    // 可选：验证 secret，防止滥用（与定时推送相同）
+    const requestSecret = urlObj.searchParams.get('secret');
+    if (requestSecret !== SECRET) {
+      return new Response(JSON.stringify({ 
+        code: 403, 
+        msg: '❌ 密钥错误，拒绝访问（需带?secret=你的密钥）' 
+      }), { 
+        status: 403, 
+        headers: { 'Content-Type': 'application/json; charset=utf-8' } 
+      });
+    }
+
+    // 定义机器人命令列表（所有命令及描述）
+    const commands = [
+      { command: 'start', description: '开始使用机器人' },
+      { command: 'addscam', description: '添加诈骗数据 (管理员)' },
+      { command: 'queryscam', description: '查询诈骗数据' },
+      { command: 'scamstats', description: '查看诈骗数据库统计' },
+      { command: 'initdb', description: '初始化数据库 (管理员)' },
+      { command: 'batchaddscam', description: '批量导入诈骗数据 (管理员)' }
+    ];
+
+    // 调用 Telegram API 设置命令菜单
+    const result = await requestTelegram('setMyCommands', makeReqBody({ commands }));
+
+    if (result.ok) {
+      return new Response(JSON.stringify({
+        code: 200,
+        msg: '✅ 命令菜单设置成功',
+        commands: commands
+      }, null, 2), {
+        headers: { 'Content-Type': 'application/json; charset=utf-8' }
+      });
+    } else {
+      return new Response(JSON.stringify({
+        code: 500,
+        msg: '❌ 命令菜单设置失败',
+        error: result
+      }, null, 2), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json; charset=utf-8' }
+      });
+    }
+  } catch (error) {
+    return new Response(JSON.stringify({
+      code: 500,
+      msg: '❌ 设置过程异常',
+      error: error.message
     }, null, 2), {
       status: 500,
       headers: { 'Content-Type': 'application/json; charset=utf-8' }
