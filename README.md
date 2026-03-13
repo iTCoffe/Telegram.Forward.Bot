@@ -1,4 +1,4 @@
-# Telegram 反诈机器人 (Cloudflare Workers版)
+# Telegram 群组版反诈机器人 (Cloudflare Workers版)
 
 一个基于 Cloudflare Workers 的 Telegram 机器人，专门用于在群组中实时检测并警告可疑诈骗消息，同时提供诈骗数据库管理功能。机器人仅对群聊中的文本消息进行诈骗检测，私聊中仅响应命令，保持安静。
 
